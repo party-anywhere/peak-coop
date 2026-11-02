@@ -1,5 +1,7 @@
 # PEAK Co-op Local
 
+<p align="center"><img src="docs/social-preview.png" alt="PEAK Co-op Local: quatro escaladores na praia, cada um na sua parte da tela, com as placas P1 a P4" width="800"></p>
+
 Até 10 escaladores no mesmo PC, no mesmo PEAK: cada um com a sua parte da tela (ou o celular), o próprio HUD,
 a própria stamina, fome e frio, o próprio inventário e mochila. Todo mundo é um escalador de verdade da
 expedição, como se tivesse entrado pela internet.
