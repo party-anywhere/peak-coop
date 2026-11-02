@@ -1,0 +1,228 @@
+{
+  "$schema": "https://raw.githubusercontent.com/joaocaioo/party-anywhere/main/schema/game-manifest.v1.json",
+  "manifestVersion": 1,
+  "id": "com.joaocaioo.peak-coop",
+  "name": "PEAK Co-op Local",
+  "tagline": "Até 10 escaladores no mesmo PC, cada um com a sua parte da tela, HUD e inventário.",
+  "description": "README.md",
+  "authors": [
+    "joaocaioo"
+  ],
+  "license": "MIT",
+  "version": "0.1.0",
+  "art": {
+    "cover": "steam"
+  },
+  "players": {
+    "min": 1,
+    "max": 10,
+    "recommended": 4
+  },
+  "sdk": {
+    "abi": 1
+  },
+  "tags": [
+    "mod",
+    "co-op"
+  ],
+  "requires": {
+    "baseGame": {
+      "name": "PEAK",
+      "steamAppId": 3527290,
+      "exe": "PEAK.exe",
+      "acceptedSha256": [
+        "4cb94d003721de9370fc7a3490d19012931bdee2bbe5d0426001d004a1e9e233"
+      ]
+    }
+  },
+  "install": {
+    "source": "github-release",
+    "asset": "peak-coop-{version}.zip",
+    "target": "baseGame",
+    "files": [
+      {
+        "from": "BepInEx/core/0Harmony.dll",
+        "to": "BepInEx/core/0Harmony.dll"
+      },
+      {
+        "from": "BepInEx/core/0Harmony20.dll",
+        "to": "BepInEx/core/0Harmony20.dll"
+      },
+      {
+        "from": "BepInEx/core/BepInEx.Harmony.dll",
+        "to": "BepInEx/core/BepInEx.Harmony.dll"
+      },
+      {
+        "from": "BepInEx/core/BepInEx.Preloader.dll",
+        "to": "BepInEx/core/BepInEx.Preloader.dll"
+      },
+      {
+        "from": "BepInEx/core/BepInEx.dll",
+        "to": "BepInEx/core/BepInEx.dll"
+      },
+      {
+        "from": "BepInEx/core/HarmonyXInterop.dll",
+        "to": "BepInEx/core/HarmonyXInterop.dll"
+      },
+      {
+        "from": "BepInEx/core/Mono.Cecil.Mdb.dll",
+        "to": "BepInEx/core/Mono.Cecil.Mdb.dll"
+      },
+      {
+        "from": "BepInEx/core/Mono.Cecil.Pdb.dll",
+        "to": "BepInEx/core/Mono.Cecil.Pdb.dll"
+      },
+      {
+        "from": "BepInEx/core/Mono.Cecil.Rocks.dll",
+        "to": "BepInEx/core/Mono.Cecil.Rocks.dll"
+      },
+      {
+        "from": "BepInEx/core/Mono.Cecil.dll",
+        "to": "BepInEx/core/Mono.Cecil.dll"
+      },
+      {
+        "from": "BepInEx/core/MonoMod.RuntimeDetour.dll",
+        "to": "BepInEx/core/MonoMod.RuntimeDetour.dll"
+      },
+      {
+        "from": "BepInEx/core/MonoMod.Utils.dll",
+        "to": "BepInEx/core/MonoMod.Utils.dll"
+      },
+      {
+        "from": "BepInEx/plugins/PeakCoop/PeakCoop.dll",
+        "to": "BepInEx/plugins/PeakCoop/PeakCoop.dll"
+      },
+      {
+        "from": "doorstop_config.ini",
+        "to": "doorstop_config.ini"
+      },
+      {
+        "from": "winhttp.dll",
+        "to": "winhttp.dll"
+      }
+    ]
+  },
+  "launch": {
+    "exe": "PEAK.exe",
+    "args": [],
+    "workingDir": ".",
+    "copies": "one"
+  },
+  "controls": {
+    "modes": [
+      {
+        "name": "Escalar",
+        "pieces": [
+          {
+            "kind": "START",
+            "x": 0.06,
+            "y": 0.09,
+            "label": "Pausa"
+          },
+          {
+            "kind": "LB",
+            "x": 0.152,
+            "y": 0.24,
+            "label": "Correr"
+          },
+          {
+            "kind": "stickL",
+            "x": 0.166,
+            "y": 0.68,
+            "label": "Andar",
+            "s": 1.1
+          },
+          {
+            "kind": "RT",
+            "x": 0.857,
+            "y": 0.12,
+            "label": "Agarrar"
+          },
+          {
+            "kind": "LT",
+            "x": 0.857,
+            "y": 0.3,
+            "label": "Item"
+          },
+          {
+            "kind": "X",
+            "x": 0.747,
+            "y": 0.52,
+            "label": "Usar",
+            "s": 1.1
+          },
+          {
+            "kind": "B",
+            "x": 0.94,
+            "y": 0.52,
+            "label": "Agachar"
+          },
+          {
+            "kind": "A",
+            "x": 0.848,
+            "y": 0.76,
+            "label": "Pular",
+            "s": 1.2
+          },
+          {
+            "kind": "stickR",
+            "x": 0.668,
+            "y": 0.84,
+            "label": "Olhar",
+            "s": 0.7
+          }
+        ]
+      },
+      {
+        "name": "Mais",
+        "pieces": [
+          {
+            "kind": "START",
+            "x": 0.06,
+            "y": 0.09,
+            "label": "Pausa"
+          },
+          {
+            "kind": "stickL",
+            "x": 0.166,
+            "y": 0.68,
+            "label": "Andar",
+            "s": 1.1
+          },
+          {
+            "kind": "RB",
+            "x": 0.857,
+            "y": 0.12,
+            "label": "Marcar"
+          },
+          {
+            "kind": "Y",
+            "x": 0.747,
+            "y": 0.52,
+            "label": "Soltar",
+            "s": 1.1
+          },
+          {
+            "kind": "RS",
+            "x": 0.94,
+            "y": 0.52,
+            "label": "Emotes"
+          },
+          {
+            "kind": "dpad",
+            "x": 0.885,
+            "y": 0.74,
+            "label": "Itens",
+            "s": 0.9
+          },
+          {
+            "kind": "A",
+            "x": 0.714,
+            "y": 0.84,
+            "label": "Pular"
+          }
+        ]
+      }
+    ]
+  }
+}

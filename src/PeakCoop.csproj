@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compila com o jogo instalado (as DLLs do PEAK não vão para o repositório).
+       Outra pasta: dotnet build src -c Release -p:PeakDir="D:\SteamLibrary\steamapps\common\PEAK" -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>PeakCoop</AssemblyName>
+    <RootNamespace>PeakCoop</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)..\build\BepInEx\plugins\PeakCoop\</OutputPath>
+    <PeakDir Condition="'$(PeakDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\PEAK</PeakDir>
+    <Managed>$(PeakDir)\PEAK_Data\Managed</Managed>
+    <BepInExCore>$(MSBuildThisFileDirectory)..\vendor\BepInEx\BepInEx\core</BepInExCore>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!-- o jogo marca muita coisa como internal/private: o mod enxerga tudo como público (só na compilação) -->
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" ExcludeAssets="runtime" />
+    <!-- o SDK do Party Anywhere vem do pa new (sdk/csharp) e compila junto -->
+    <Compile Include="..\sdk\csharp\PartyAnywhere.cs" Link="Sdk\PartyAnywhere.cs" />
+    <Compile Include="..\sdk\csharp\Unity\PhoneViews.cs" Link="Sdk\PhoneViews.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx" HintPath="$(BepInExCore)\BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExCore)\0Harmony.dll" Private="false" />
+    <Reference Include="Assembly-CSharp" HintPath="$(Managed)\Assembly-CSharp.dll" Private="false" Publicize="true" />
+    <Reference Include="Zorro.Core.Runtime" HintPath="$(Managed)\Zorro.Core.Runtime.dll" Private="false" Publicize="true" />
+    <Reference Include="Zorro.ControllerSupport" HintPath="$(Managed)\Zorro.ControllerSupport.dll" Private="false" />
+    <Reference Include="Managers" HintPath="$(Managed)/Managers.dll" Private="false" />
+    <Reference Include="Zorro.UI.Runtime" HintPath="$(Managed)/Zorro.UI.Runtime.dll" Private="false" />
+    <Reference Include="Platforms" HintPath="$(Managed)/Platforms.dll" Private="false" />
+    <Reference Include="Utilities" HintPath="$(Managed)/Utilities.dll" Private="false" />
+    <Reference Include="PhotonUnityNetworking" HintPath="$(Managed)\PhotonUnityNetworking.dll" Private="false" Publicize="true" />
+    <Reference Include="PhotonRealtime" HintPath="$(Managed)\PhotonRealtime.dll" Private="false" Publicize="true" />
+    <Reference Include="Photon3Unity3D" HintPath="$(Managed)\Photon3Unity3D.dll" Private="false" />
+    <Reference Include="Unity.InputSystem" HintPath="$(Managed)\Unity.InputSystem.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(Managed)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(Managed)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.ScreenCaptureModule" HintPath="$(Managed)\UnityEngine.ScreenCaptureModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AnimationModule" HintPath="$(Managed)\UnityEngine.AnimationModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(Managed)\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(Managed)\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(Managed)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(Managed)\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(Managed)/Unity.TextMeshPro.dll" Private="false" />
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime" HintPath="$(Managed)/Unity.RenderPipelines.Universal.Runtime.dll" Private="false" />
+    <Reference Include="Unity.RenderPipelines.Core.Runtime" HintPath="$(Managed)/Unity.RenderPipelines.Core.Runtime.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(Managed)\UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(Managed)\UnityEngine.PhysicsModule.dll" Private="false" />
+  </ItemGroup>
+
+  <!-- build/ fica como a pasta do jogo depois de instalar (é o que o "pa pack" empacota):
+       o BepInEx (carregador, LGPL-2.1) e o mod em BepInEx\plugins -->
+  <Target Name="StageBepInEx" AfterTargets="Build">
+    <ItemGroup>
+      <BepInExCoreFiles Include="$(BepInExCore)\*.dll" />
+      <BepInExRootFiles Include="$(BepInExCore)\..\..\winhttp.dll;$(BepInExCore)\..\..\doorstop_config.ini" />
+    </ItemGroup>
+    <Copy SourceFiles="@(BepInExCoreFiles)" DestinationFolder="$(MSBuildThisFileDirectory)..\build\BepInEx\core" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(BepInExRootFiles)" DestinationFolder="$(MSBuildThisFileDirectory)..\build" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="CheckInputs" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(Managed)\Assembly-CSharp.dll')" Text="PEAK não encontrado em '$(PeakDir)'. Passe -p:PeakDir=&quot;pasta do jogo&quot;." />
+    <Error Condition="!Exists('$(BepInExCore)\BepInEx.dll')" Text="BepInEx não encontrado. Rode antes: powershell -File scripts\fetch-bepinex.ps1" />
+  </Target>
+</Project>
