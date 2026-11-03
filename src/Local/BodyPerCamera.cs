@@ -31,10 +31,33 @@ namespace PeakCoop.Local
         {
             static bool Prefix(HideTheBody __instance)
             {
-                if (!VirtualActors.CanUse) return true;
+                // só com mais de uma câmera; um jogador sozinho é o jogo de sempre
+                if (!Split())
+                {
+                    if (bodies.Count > 0) GiveBack();
+                    return true;
+                }
+                Install();
                 if (!materials.ContainsKey(__instance)) Track(__instance);
                 return false;
             }
+        }
+
+        /// <summary>Há alguma câmera de escalador extra desenhando (senão, só a do jogo).</summary>
+        static bool Split() => VirtualActors.CanUse && SeatCameras.Any;
+
+        /// <summary>Voltou a um jogador só: todos os corpos aparecendo, e o jogo decide de novo a partir daí.</summary>
+        static void GiveBack()
+        {
+            foreach (HideTheBody b in bodies)
+            {
+                if (b == null) continue;
+                foreach (Material m in materials[b]) if (m != null) m.SetFloat(VertexGhost, 0f);
+                b.isShowing = true;
+            }
+            bodies.Clear();
+            materials.Clear();
+            hidden.Clear();
         }
 
         static void Track(HideTheBody b)
@@ -55,7 +78,7 @@ namespace PeakCoop.Local
 
         static void BeforeCamera(ScriptableRenderContext ctx, Camera cam)
         {
-            if (bodies.Count == 0) return;
+            if (bodies.Count == 0 || !Split()) return;
             Character owner = OwnerOf(cam);
             for (int i = bodies.Count - 1; i >= 0; i--)
             {
