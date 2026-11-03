@@ -20,7 +20,7 @@ namespace PeakCoop
     {
         public const string Id = "com.joaocaioo.peak-coop";
         public const string Name = "PEAK Co-op Local";
-        public const string Version = "0.1.1";
+        public const string Version = "0.1.2";
 
         const float ConnectRetrySeconds = 2f;
 

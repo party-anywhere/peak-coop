@@ -14,6 +14,17 @@ namespace PeakCoop.Local
 
         public static bool IsSeatCamera(MainCamera cam) => seatOf.ContainsKey(cam);
 
+        /// <summary>Alguma câmera de escalador extra viva e ligada (a cena pode ter levado as antigas).</summary>
+        public static bool Any
+        {
+            get
+            {
+                foreach (MainCamera m in seatOf.Keys)
+                    if (m != null && m.isActiveAndEnabled) return true;
+                return false;
+            }
+        }
+
         /// <summary>A vaga dona da câmera (a câmera do jogo é de quem hospeda).</summary>
         public static int SeatOf(MainCamera cam) => cam != null && seatOf.TryGetValue(cam, out int seat) ? seat : Seats.Host;
 
