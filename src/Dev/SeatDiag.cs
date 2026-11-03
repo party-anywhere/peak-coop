@@ -11,7 +11,7 @@ namespace PeakCoop.Dev
         float next;
 
         string dumpedScene;
-        bool dumpedElevators;
+        bool dumpedElevators, dumpedLights;
 
         void Update()
         {
@@ -41,6 +41,29 @@ namespace PeakCoop.Dev
                             if (!(c is Transform) && !(c is Renderer) && !(c is MeshFilter)) sb.Append($" [{c.gameObject.name}:{c.GetType().Name}]");
                 }
             dumpedElevators = true;
+            if (!dumpedLights && GameHandler.IsOnIsland && Character.localCharacter != null)
+            {
+                dumpedLights = true;
+                var lights = new StringBuilder("Luzes:");
+                void Dump(string who, Transform root)
+                {
+                    if (root == null) return;
+                    foreach (Light l in root.GetComponentsInChildren<Light>(true))
+                        lights.Append($"\n  {who}: {l.name} tipo={l.type} ligada={l.enabled} ativa={l.gameObject.activeInHierarchy} alcance={l.range:F1} intens={l.intensity:F2} pai={l.transform.parent?.name}");
+                }
+                Dump("P1 corpo", Character.localCharacter.transform);
+                Dump("P1 câmera", MainCamera.instance != null ? MainCamera.instance.transform.root : null);
+                foreach (ExtraSeat s in SeatContext.Extras)
+                {
+                    Dump($"P{s.Seat + 1} corpo", s.Character != null ? s.Character.transform : null);
+                    Dump($"P{s.Seat + 1} câmera", s.Camera != null ? s.Camera.transform : null);
+                    break;
+                }
+                foreach (Light l in FindObjectsByType<Light>(FindObjectsSortMode.None))
+                    if (l.type != LightType.Directional && Vector3.Distance(l.transform.position, Character.localCharacter.Center) < 3f)
+                        lights.Append($"\n  perto do P1: {l.name} pai={l.transform.parent?.name} raiz={l.transform.root.name} ligada={l.enabled}");
+                Plugin.Log.LogInfo(lights.ToString());
+            }
             foreach (Player p in FindObjectsByType<Player>(FindObjectsSortMode.None))
                 sb.Append($"\n  inventário {p.name} ator={p.photonView.OwnerActorNr} local={p == Player.localPlayer} [{string.Join(",", System.Array.ConvertAll(p.itemSlots, i => i.IsEmpty() ? "-" : i.GetPrefabName()))}] personagem={(p.character != null ? p.character.name : "-")}");
             Character host = Character.localCharacter;

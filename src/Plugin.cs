@@ -20,7 +20,7 @@ namespace PeakCoop
     {
         public const string Id = "com.joaocaioo.peak-coop";
         public const string Name = "PEAK Co-op Local";
-        public const string Version = "0.1.0";
+        public const string Version = "0.1.1";
 
         const float ConnectRetrySeconds = 2f;
 
@@ -44,6 +44,9 @@ namespace PeakCoop
             var harmony = new Harmony(Id);
             harmony.PatchAll(typeof(Plugin).Assembly);
             SeatComponents.Install(harmony);
+            // quem a câmera está assistindo (espectador depois de morrer) é de cada jogador, não do PC
+            SeatContext.TrackPerSeat(AccessTools.Field(typeof(MainCameraMovement), "<specCharacter>k__BackingField"));
+            PersonalVolumes.Install();
             WorldTouch.Install(harmony);
             // os escaladores do sofá entram nesta partida, com a tela dividida aqui
             gameObject.AddComponent<LocalSeats>();
@@ -58,7 +61,8 @@ namespace PeakCoop
             Dev.DevAuto.PrintEvery = Config.Bind("Desenvolvimento", "PrintACada", 0f, "Segundos entre prints da tela em BepInEx\\prints (0 = desligado).").Value;
             if (Dev.DevAuto.AutoSolo || Dev.DevAuto.AutoIsland || Dev.DevAuto.PrintEvery > 0f) gameObject.AddComponent<Dev.DevAuto>();
             Dev.DevScenario.Group = Config.Bind("Desenvolvimento", "CenarioGrupo", false, "No lugar da mala: junta todos na frente do P1 (teste das placas de nome).").Value;
-            if (Dev.DevScenario.Group || Config.Bind("Desenvolvimento", "CenarioMala", false, "Leva o P2 até uma mala de tempos em tempos (teste de interação).").Value) gameObject.AddComponent<Dev.DevScenario>();
+            Dev.DevScenario.Effects = Config.Bind("Desenvolvimento", "CenarioEfeitos", false, "Na ilha: P2 envenenado e P3 morto (teste dos efeitos e do espectador por jogador).").Value;
+            if (Dev.DevScenario.Group || Dev.DevScenario.Effects || Config.Bind("Desenvolvimento", "CenarioMala", false, "Leva o P2 até uma mala de tempos em tempos (teste de interação).").Value) gameObject.AddComponent<Dev.DevScenario>();
             if (Config.Bind("Desenvolvimento", "Diagnostico", false, "Anota no log onde está cada escalador, a câmera e o HUD dele.").Value) gameObject.AddComponent<Dev.SeatDiag>();
         }
 

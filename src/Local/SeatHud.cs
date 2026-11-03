@@ -136,6 +136,11 @@ namespace PeakCoop.Local
         {
             f.pivot = new Vector2(0.5f, 0.5f);
             f.localScale = new Vector3(scale, scale, 1f);
+            // nada do HUD de um sai da parte dele (a máscara do binóculo é uma imagem 10x maior que a tela, as telas
+            // de morte e de desmaio cobrem tudo)
+            var clip = f.GetComponent<UnityEngine.UI.RectMask2D>() ?? f.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+            bool whole = part.width >= 0.999f && part.height >= 0.999f;
+            if (clip.enabled == whole) clip.enabled = !whole;
             if (c.renderMode != RenderMode.ScreenSpaceOverlay)
             {
                 f.anchorMin = Vector2.zero;
