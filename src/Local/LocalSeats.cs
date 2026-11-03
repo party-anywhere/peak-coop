@@ -56,6 +56,7 @@ namespace PeakCoop.Local
                     else if (s.Camera == null) SeatCameras.Create(s);
                     else if (s.InteractionObject == null) SeatInteraction.Create(s);
                     else if (s.Hud == null) { SeatHud.Create(s); SeatMenus.Create(s); }
+                    else SeatLight.Ensure(s, host);
                 }
                 catch (Exception e)
                 {
@@ -234,6 +235,7 @@ namespace PeakCoop.Local
                 }
             });
             Seats.Bind(s.Character, s.Seat);
+            s.HasLight = false;
             SeatComponents.Register(s.Character.gameObject, s.Seat);
             if (s.Player != null) SeatComponents.Register(s.Player.gameObject, s.Seat);
             Plugin.Log.LogInfo($"P{s.Seat + 1} nasceu: {s.Character.name} em {pos:F1} (pontos de nascer: {SpawnPoint.allSpawnPoints.Count}, desmaiado: {passedOut})");

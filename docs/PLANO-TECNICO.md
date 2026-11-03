@@ -116,6 +116,12 @@ ainda; ⏳ = falta.
     (`[Aparencia]` no config do mod).
 12. ✅ Ficha validada, pacote (`pa pack`) e na Biblioteca do Hub (`pa add .`). ⏳ Release público.
 
+13. ✅ (0.1.1) O que é de cada jogador na tela: espectador por jogador (o `specCharacter` estático vira um por
+    vaga; quem morre assiste, os outros seguem jogando), efeitos de tela por câmera (os volumes de pós-processamento
+    do HUD de cada um e os de desmaio e queda só valem na câmera do dono), HUD recortado na parte de cada um (o
+    binóculo e as telas cheias não vazam), nome "P2" no espectador e no fim da expedição, luz do peito para todos,
+    luzes do mundo acesas para todas as câmeras, "CO-OP LOCAL" no lugar de "Sozinho" no menu.
+
 ## Desempenho medido (Ryzen 7 5700U, vídeo integrado, 1080p, ilha)
 
 | Jogadores | FPS |

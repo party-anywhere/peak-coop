@@ -18,6 +18,7 @@ namespace PeakCoop.Local
         public MainCamera Camera;
         public GameObject InteractionObject;
         public GameObject Hud;
+        public bool HasLight;
         /// <summary>As instâncias estáticas do jogo que são da vaga (os singletons da câmera, a Interaction, o HUD): campo → valor.</summary>
         public readonly Dictionary<FieldInfo, object> Singletons = new Dictionary<FieldInfo, object>();
 
@@ -62,6 +63,19 @@ namespace PeakCoop.Local
         public static IEnumerable<ExtraSeat> Extras
         {
             get { foreach (ExtraSeat s in states) if (s != null) yield return s; }
+        }
+
+        /// <summary>Campos que cada vaga tem do zero (não herdam o de quem hospeda), e que ela guarda ao sair do contexto.</summary>
+        static readonly HashSet<int> perSeat = new HashSet<int>();
+
+        /// <summary>
+        /// Um estado estático do jogo que é de quem está jogando, não do PC: cada vaga começa com o valor padrão do tipo
+        /// e fica com o que o jogo puser ali no contexto dela (quem a câmera está assistindo, por exemplo).
+        /// </summary>
+        public static void TrackPerSeat(FieldInfo field)
+        {
+            TrackSingleton(field);
+            perSeat.Add(trackedIndex[field]);
         }
 
         public static void TrackSingleton(FieldInfo field)
@@ -144,6 +158,7 @@ namespace PeakCoop.Local
             // o que a vaga ganhou no contexto (o personagem que nasceu, o Player dela) fica com ela
             s.Character = Character.localCharacter;
             s.Player = Player.localPlayer;
+            foreach (int i in perSeat) s.Singletons[tracked[i]] = getters[i]();
         }
 
         static void Load(int seat)
@@ -168,7 +183,7 @@ namespace PeakCoop.Local
             for (int i = 0; i < tracked.Count; i++)
             {
                 object v = s.Singletons.TryGetValue(tracked[i], out object mine) && (!(mine is UnityEngine.Object o) || o != null)
-                    ? mine : hostStatics[i];
+                    ? mine : perSeat.Contains(i) ? null : hostStatics[i];
                 setters[i](v);
             }
         }

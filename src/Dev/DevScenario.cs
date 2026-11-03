@@ -14,6 +14,10 @@ namespace PeakCoop.Dev
         /// <summary>Em vez da mala: junta todos em fila na frente do P1, uns olhando para os outros (placas de nome).</summary>
         public static bool Group;
 
+        /// <summary>Teste dos efeitos por jogador: o P2 fica envenenado e o P3 morre (os outros devem seguir normais).</summary>
+        public static bool Effects;
+        bool effectsDone;
+
         void Update()
         {
             if (!VirtualActors.CanUse || !GameHandler.IsOnIsland) { next = -1f; return; }
@@ -21,6 +25,7 @@ namespace PeakCoop.Dev
             if (Time.unscaledTime < next) return;
             next = Time.unscaledTime + 20f;
             if (Group) { Gather(); return; }
+            if (Effects) { if (!effectsDone) { effectsDone = true; PoisonAndDie(); } return; }
             // o primeiro escalador extra com controle de verdade (vaga ativa no Hub)
             ExtraSeat p2 = null;
             foreach (ExtraSeat s in SeatContext.Extras)
@@ -58,6 +63,18 @@ namespace PeakCoop.Dev
             });
             if (best is Item item) StartCoroutine(PickUp(p2, item));
             Plugin.Log.LogInfo($"Cenário: P{p2.Seat + 1} levado até {best.name} em {target:F1}; itens antes: [{string.Join(",", System.Array.ConvertAll(p2.Player.itemSlots, i => i.IsEmpty() ? "-" : i.GetPrefabName()))}]");
+        }
+
+        static void PoisonAndDie()
+        {
+            foreach (ExtraSeat s in SeatContext.Extras)
+            {
+                Character c = s.Character;
+                if (c == null) continue;
+                if (s.Seat == 1) SeatContext.Run(1, () => c.refs.afflictions.AddStatus(CharacterAfflictions.STATUSTYPE.Poison, 0.6f));
+                if (s.Seat == 2) SeatContext.Run(2, () => c.DieInstantly());
+            }
+            Plugin.Log.LogInfo("Cenário: P2 envenenado, P3 morto");
         }
 
         static void Gather()
