@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -20,7 +21,7 @@ namespace PeakCoop
     {
         public const string Id = "com.joaocaioo.peak-coop";
         public const string Name = "PEAK Co-op Local";
-        public const string Version = "0.1.2";
+        public const string Version = "0.1.3";
 
         const float ConnectRetrySeconds = 2f;
 
@@ -31,27 +32,48 @@ namespace PeakCoop
 
         public static Client Hub { get; private set; }
 
-        float nextConnectTry;
-        bool announced;
+        const float NoUpdateWarnSeconds = 15f;
+
+        static float nextConnectTry;
+        static bool announced;
+        static volatile bool ticked;
+        static System.Threading.Timer watchdog;
+        static readonly HashSet<string> reported = new HashSet<string>();
+
+        /// <summary>
+        /// Onde o mod roda: um objeto só dele, que nenhuma troca de cena destrói. Não depende do objeto do BepInEx
+        /// (em alguns PCs ele é desligado ou destruído e nada do mod rodava, sem erro nenhum no log).
+        /// </summary>
+        internal static GameObject Runner { get; private set; }
 
         void Awake()
         {
             Log = Logger;
             Settings = Config;
             Log.LogInfo($"{Name} {Version}: um PEAK só, com os jogadores do Party Anywhere dentro dele");
-            // o jogo segue lendo os controles do Hub sem ser a janela em foco (o Hub ou o navegador por cima)
-            Application.runInBackground = true;
+            // cada passo à parte: um que falhe aparece no log com o nome, e os outros seguem
+            Step("rodar com a janela sem foco", () => Application.runInBackground = true); // o Hub ou o navegador por cima
             var harmony = new Harmony(Id);
-            harmony.PatchAll(typeof(Plugin).Assembly);
-            SeatComponents.Install(harmony);
+            Step("ganchos no jogo", () => harmony.PatchAll(typeof(Plugin).Assembly));
+            Step("componentes por jogador", () => SeatComponents.Install(harmony));
             // quem a câmera está assistindo (espectador depois de morrer) é de cada jogador, não do PC
-            SeatContext.TrackPerSeat(AccessTools.Field(typeof(MainCameraMovement), "<specCharacter>k__BackingField"));
-            PersonalVolumes.Install();
-            WorldTouch.Install(harmony);
+            Step("espectador por jogador", () => SeatContext.TrackPerSeat(AccessTools.Field(typeof(MainCameraMovement), "<specCharacter>k__BackingField")));
+            Step("efeitos de tela por jogador", PersonalVolumes.Install);
+            Step("toques do mundo por jogador", () => WorldTouch.Install(harmony));
+
+            Runner = new GameObject("PeakCoop.Runner") { hideFlags = HideFlags.HideAndDontSave };
+            DontDestroyOnLoad(Runner);
+            Runner.AddComponent<Tick>();
             // os escaladores do sofá entram nesta partida, com a tela dividida aqui
-            gameObject.AddComponent<LocalSeats>();
-            gameObject.AddComponent<SplitScreen>();
-            gameObject.AddComponent<PhoneViews>();
+            Step("escaladores do sofá", () => Runner.AddComponent<LocalSeats>());
+            Step("tela dividida", () => Runner.AddComponent<SplitScreen>());
+            Step("tela no celular", () => Runner.AddComponent<PhoneViews>());
+
+            // se nada do mod rodar em 15 s, o log diz (em vez de ficar calado)
+            watchdog = new System.Threading.Timer(_ =>
+            {
+                if (!ticked) Log.LogError($"O mod não rodou em {NoUpdateWarnSeconds:0} s depois de carregar (o jogo travou ou o Unity não está chamando o Update). Mande este arquivo (BepInEx, LogOutput.log) ao autor do mod.");
+            }, null, (int)(NoUpdateWarnSeconds * 1000), System.Threading.Timeout.Infinite);
 
             // para desenvolver (BepInEx\config\com.joaocaioo.peak-coop.cfg); nada é gravado nas configurações do jogo
             Dev.DevAuto.AutoSolo = Config.Bind("Desenvolvimento", "EntrarSozinho", false, "Entra no Jogar sozinho assim que o menu abre.").Value;
@@ -59,14 +81,48 @@ namespace PeakCoop
             LocalSeats.MaxPlayers = Config.Bind("Desenvolvimento", "LimiteJogadores", 0, "Só as primeiras N vagas entram na partida (0 = todas), para medir desempenho.").Value;
             Dev.DevAuto.CameraTest = Config.Bind("Desenvolvimento", "TesteCameras", false, "Na ilha, desliga as câmeras extras por 15 s para medir o custo delas.").Value;
             Dev.DevAuto.PrintEvery = Config.Bind("Desenvolvimento", "PrintACada", 0f, "Segundos entre prints da tela em BepInEx\\prints (0 = desligado).").Value;
-            if (Dev.DevAuto.AutoSolo || Dev.DevAuto.AutoIsland || Dev.DevAuto.PrintEvery > 0f) gameObject.AddComponent<Dev.DevAuto>();
+            if (Dev.DevAuto.AutoSolo || Dev.DevAuto.AutoIsland || Dev.DevAuto.PrintEvery > 0f) Runner.AddComponent<Dev.DevAuto>();
             Dev.DevScenario.Group = Config.Bind("Desenvolvimento", "CenarioGrupo", false, "No lugar da mala: junta todos na frente do P1 (teste das placas de nome).").Value;
             Dev.DevScenario.Effects = Config.Bind("Desenvolvimento", "CenarioEfeitos", false, "Na ilha: P2 envenenado e P3 morto (teste dos efeitos e do espectador por jogador).").Value;
-            if (Dev.DevScenario.Group || Dev.DevScenario.Effects || Config.Bind("Desenvolvimento", "CenarioMala", false, "Leva o P2 até uma mala de tempos em tempos (teste de interação).").Value) gameObject.AddComponent<Dev.DevScenario>();
-            if (Config.Bind("Desenvolvimento", "Diagnostico", false, "Anota no log onde está cada escalador, a câmera e o HUD dele.").Value) gameObject.AddComponent<Dev.SeatDiag>();
+            if (Dev.DevScenario.Group || Dev.DevScenario.Effects || Config.Bind("Desenvolvimento", "CenarioMala", false, "Leva o P2 até uma mala de tempos em tempos (teste de interação).").Value) Runner.AddComponent<Dev.DevScenario>();
+            if (Config.Bind("Desenvolvimento", "Diagnostico", false, "Anota no log onde está cada escalador, a câmera e o HUD dele.").Value) Runner.AddComponent<Dev.SeatDiag>();
         }
 
-        void Update()
+        static void Step(string what, Action action)
+        {
+            try { action(); }
+            catch (Exception e) { Log.LogError($"Falhou ao preparar \"{what}\": {e}"); }
+        }
+
+        /// <summary>Um erro por quadro viraria milhares de linhas: cada erro diferente vai ao log uma vez.</summary>
+        internal static void ReportOnce(string where, Exception e)
+        {
+            string key = where + e.GetType().Name + e.Message;
+            if (reported.Count < 50 && reported.Add(key)) Log.LogError($"Erro em {where}: {e}");
+        }
+
+        /// <summary>O quadro do mod, chamado pelo Runner.</summary>
+        sealed class Tick : MonoBehaviour
+        {
+            void Update()
+            {
+                if (!ticked)
+                {
+                    ticked = true;
+                    Log.LogInfo("Mod rodando");
+                }
+                try { Frame(); }
+                catch (Exception e) { ReportOnce("Plugin.Update", e); }
+            }
+
+            void OnApplicationQuit()
+            {
+                Hub?.Dispose();
+                Hub = null;
+            }
+        }
+
+        static void Frame()
         {
             // aqui é sempre o contexto de quem hospeda; um contexto que ficou aberto (erro no meio) volta agora
             if (SeatContext.Current != Seats.Host)
@@ -85,13 +141,7 @@ namespace PeakCoop
             }
         }
 
-        void OnApplicationQuit()
-        {
-            Hub?.Dispose();
-            Hub = null;
-        }
-
-        void TryConnect()
+        static void TryConnect()
         {
             nextConnectTry = Time.unscaledTime + ConnectRetrySeconds;
             Result r = Client.Connect(out Client c);
@@ -113,7 +163,7 @@ namespace PeakCoop
             }
         }
 
-        void DrainEvents()
+        static void DrainEvents()
         {
             while (Hub.NextEvent(out PartyAnywhere.Event ev))
             {

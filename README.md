@@ -44,6 +44,12 @@ Com um agente de IA (Claude e outros), é só pedir *"instale este mod no Party 
   os controles do Windows para quem está no lobby.
 - Versão suportada: PEAK 3.0.1 (`acceptedSha256` na ficha). Conquistas ficam só com a conta de quem hospeda.
 
+## Não funcionou?
+
+Abra uma [issue](../../issues) e anexe o arquivo `BepInEx\LogOutput.log`, que fica na pasta do PEAK (na Steam:
+botão direito no PEAK → Gerenciar → Navegar pelos arquivos locais). Se algo do mod falhar, o log diz em qual
+passo; se o mod não rodar em 15 segundos depois de carregar, o log também avisa.
+
 ## Desenvolver
 
 ```powershell
